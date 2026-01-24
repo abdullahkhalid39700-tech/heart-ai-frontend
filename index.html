@@ -12,6 +12,8 @@
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.05); }
         .heartbeat { animation: beat 1.2s infinite ease-in-out; }
         @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(239, 68, 68, 0.2); border-radius: 10px; }
     </style>
 </head>
 <body class="text-slate-200 min-h-screen">
@@ -53,17 +55,27 @@
                 </label>
                 <button onclick="analyzeData()" id="analyzeBtn" class="w-full mt-6 bg-slate-100 text-slate-950 py-4 rounded-2xl font-black hover:bg-red-500 hover:text-white transition-all">RUN NEURAL ANALYSIS</button>
             </div>
+
+            <div class="glass p-8 rounded-[2.5rem] bg-gradient-to-b from-slate-900/20 to-transparent">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-xs text-slate-500 uppercase tracking-widest">Diagnostic History</h3>
+                    <button onclick="loadHistory()" class="text-[10px] text-red-500 hover:text-white transition-all uppercase font-mono">Refresh</button>
+                </div>
+                <div id="historyList" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    <p class="text-[10px] opacity-30 italic font-mono text-center py-4">Awaiting telemetry...</p>
+                </div>
+            </div>
         </div>
 
         <div class="lg:col-span-8 space-y-6">
             <div id="resultCard" class="hidden space-y-6">
                 <div class="grid grid-cols-2 gap-6">
                     <div class="glass p-6 rounded-3xl">
-                        <p class="text-[10px] font-bold text-slate-500 mb-2">REGULARITY</p>
-                        <h2 id="normalPercent" class="text-4xl font-black text-emerald-400 font-mono">0%</h2>
+                        <p class="text-[10px] font-bold text-slate-500 mb-2 text-center uppercase tracking-widest">Regularity Score</p>
+                        <h2 id="normalPercent" class="text-4xl font-black text-emerald-400 font-mono text-center">0%</h2>
                     </div>
-                    <div class="glass p-6 rounded-3xl">
-                        <p class="text-[10px] font-bold text-slate-500 mb-2">ARRHYTHMIA RISK</p>
+                    <div class="glass p-6 rounded-3xl text-center">
+                        <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-widest">Arrhythmia Risk</p>
                         <h2 id="abnormalPercent" class="text-4xl font-black text-red-500 font-mono">0%</h2>
                     </div>
                 </div>
@@ -72,8 +84,9 @@
                 </div>
             </div>
 
-            <div id="emptyState" class="glass h-[500px] rounded-[2.5rem] flex flex-col items-center justify-center opacity-40">
-                <p class="font-mono text-xs uppercase tracking-[0.3em]">Waiting for telemetry...</p>
+            <div id="emptyState" class="glass h-full min-h-[500px] rounded-[2.5rem] flex flex-col items-center justify-center opacity-40 text-center p-10">
+                <div class="w-20 h-20 border border-white/10 rounded-full flex items-center justify-center mb-4 animate-pulse">♥</div>
+                <p class="font-mono text-xs uppercase tracking-[0.3em]">Waiting for biometric data stream...</p>
             </div>
         </div>
     </main>
@@ -93,8 +106,10 @@
         async function handleAuth() {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPass').value;
+            const btn = document.getElementById('authBtn');
             if(!email || !password) return alert("All fields required.");
 
+            btn.innerText = "AUTHENTICATING...";
             const endpoint = isLoginMode ? "/login" : "/signup";
             try {
                 const res = await fetch(API_BASE + endpoint, {
@@ -108,24 +123,62 @@
                 if(isLoginMode) {
                     localStorage.setItem('heart_token', data.token);
                     document.getElementById('authOverlay').style.display = 'none';
+                    loadHistory();
                 } else {
-                    alert("Account Created. Please Login.");
+                    alert("Practitioner Registered. Please Initialize Session.");
                     toggleAuthMode();
                 }
             } catch(e) { alert(e.message); }
+            finally { btn.innerText = isLoginMode ? "Initialize" : "Register"; }
         }
 
         function logout() { localStorage.removeItem('heart_token'); location.reload(); }
 
+        // HISTORY LOGIC
+        async function loadHistory() {
+            const token = localStorage.getItem('heart_token');
+            if (!token) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/history`, {
+                    headers: { 'Authorization': token }
+                });
+                const records = await res.json();
+                const list = document.getElementById('historyList');
+                
+                if (records.length === 0) {
+                    list.innerHTML = `<p class="text-[10px] opacity-20 text-center py-4">No records found</p>`;
+                    return;
+                }
+
+                list.innerHTML = records.map(rec => `
+                    <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5 flex justify-between items-center group hover:border-red-500/30 transition-all">
+                        <div>
+                            <p class="text-[10px] font-bold ${rec.result === 'NORMAL' ? 'text-emerald-400' : 'text-red-500'} font-mono">${rec.result}</p>
+                            <p class="text-[8px] opacity-40 font-mono truncate w-24">${rec.filename}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-mono">${(rec.probability * 100).toFixed(0)}%</p>
+                            <p class="text-[7px] opacity-30 italic">${new Date(rec.created_at).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { console.error("History sync failed", e); }
+        }
+
         // ANALYSIS LOGIC
         document.getElementById('fileInput').onchange = function() {
-            document.getElementById('fileNameDisplay').innerText = this.files[0].name;
+            document.getElementById('fileNameDisplay').innerText = this.files[0] ? this.files[0].name : "idle_state";
         };
 
         async function analyzeData() {
             const file = document.getElementById('fileInput').files[0];
             const token = localStorage.getItem('heart_token');
+            const btn = document.getElementById('analyzeBtn');
             if(!file) return alert("Select a file first.");
+
+            btn.innerText = "NEURAL PROCESSING...";
+            btn.disabled = true;
 
             const formData = new FormData();
             formData.append('file', file);
@@ -145,7 +198,12 @@
                 document.getElementById('abnormalPercent').innerText = (data.average_probability*100).toFixed(1) + "%";
                 
                 renderChart(data.waveform);
-            } catch(e) { alert(e.message); }
+                loadHistory(); // Refresh history after new prediction
+            } catch(e) { alert("Analysis failed: " + e.message); }
+            finally {
+                btn.innerText = "RUN NEURAL ANALYSIS";
+                btn.disabled = false;
+            }
         }
 
         function renderChart(points) {
@@ -155,14 +213,33 @@
                 type: 'line',
                 data: {
                     labels: points.map((_,i) => i),
-                    datasets: [{ data: points, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, tension: 0.4 }]
+                    datasets: [{ 
+                        data: points, 
+                        borderColor: '#ef4444', 
+                        borderWidth: 2, 
+                        pointRadius: 0, 
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(239, 68, 68, 0.05)'
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.2)', font: { size: 10 } } }
+                    }
+                }
             });
         }
 
-        // Check login on start
-        if(localStorage.getItem('heart_token')) document.getElementById('authOverlay').style.display = 'none';
+        // Initial Start
+        if(localStorage.getItem('heart_token')) {
+            document.getElementById('authOverlay').style.display = 'none';
+            loadHistory();
+        }
     </script>
 </body>
 </html>
