@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HeartAI | Neural Core</title>
+    <title>Pulse Prognosis | Neural Core</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
@@ -22,14 +22,14 @@
         <div class="glass p-10 rounded-[3rem] w-full max-w-md border-red-500/20 shadow-2xl">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 bg-red-600 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 heartbeat">♥</div>
-                <h2 id="authTitle" class="text-2xl font-black tracking-tighter">INITIALIZE SESSION</h2>
-                <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest">Neural Core Authentication</p>
+                <h2 id="authTitle" class="text-2xl font-black tracking-tighter uppercase">Login</h2>
+                <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest">Pulse Prognosis Access</p>
             </div>
             <div class="space-y-4">
-                <input type="email" id="authEmail" placeholder="Medical Email" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
-                <input type="password" id="authPass" placeholder="Access Code" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
-                <button onclick="handleAuth()" id="authBtn" class="w-full bg-red-600 py-4 rounded-2xl font-bold hover:bg-red-500 transition-all shadow-lg shadow-red-900/40 uppercase text-sm tracking-widest">Initialize</button>
-                <button onclick="toggleAuthMode()" id="toggleBtn" class="w-full text-xs text-slate-500 hover:text-red-400">New Practitioner? Create Account</button>
+                <input type="email" id="authEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
+                <input type="password" id="authPass" placeholder="Password" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
+                <button onclick="handleAuth()" id="authBtn" class="w-full bg-red-600 py-4 rounded-2xl font-bold hover:bg-red-500 transition-all shadow-lg shadow-red-900/40 uppercase text-sm tracking-widest">Login</button>
+                <button onclick="toggleAuthMode()" id="toggleBtn" class="w-full text-xs text-slate-500 hover:text-red-400">Need an account? Signup</button>
             </div>
         </div>
     </div>
@@ -37,9 +37,9 @@
     <nav class="p-6 glass border-b border-white/5 sticky top-0 z-50 flex justify-between items-center">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold">♥</div>
-            <h1 class="text-xl font-black">HEART<span class="text-red-500">AI</span></h1>
+            <h1 class="text-xl font-black tracking-tighter">PULSE<span class="text-red-500">PROGNOSIS</span></h1>
         </div>
-        <button onclick="logout()" class="text-[10px] font-bold text-slate-500 hover:text-red-400 border border-white/10 px-4 py-2 rounded-xl transition-all">TERMINATE_SESSION</button>
+        <button onclick="logout()" class="text-[10px] font-bold text-slate-500 hover:text-red-400 border border-white/10 px-4 py-2 rounded-xl transition-all">LOGOUT</button>
     </nav>
 
     <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
@@ -53,7 +53,7 @@
                         <p class="text-[10px] mt-2 opacity-40 font-mono" id="fileNameDisplay">idle_state</p>
                     </div>
                 </label>
-                <button onclick="analyzeData()" id="analyzeBtn" class="w-full mt-6 bg-slate-100 text-slate-950 py-4 rounded-2xl font-black hover:bg-red-500 hover:text-white transition-all">RUN NEURAL ANALYSIS</button>
+                <button onclick="analyzeData()" id="analyzeBtn" class="w-full mt-6 bg-slate-100 text-slate-950 py-4 rounded-2xl font-black hover:bg-red-500 hover:text-white transition-all">RUN ANALYSIS</button>
             </div>
 
             <div class="glass p-8 rounded-[2.5rem] bg-gradient-to-b from-slate-900/20 to-transparent">
@@ -96,20 +96,21 @@
         let isLoginMode = true;
         let chart = null;
 
-        // AUTH LOGIC
+        // SIMPLIFIED AUTH LOGIC
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
-            document.getElementById('authTitle').innerText = isLoginMode ? "INITIALIZE SESSION" : "REGISTER ACCOUNT";
-            document.getElementById('toggleBtn').innerText = isLoginMode ? "New Practitioner? Create Account" : "Return to Login";
+            document.getElementById('authTitle').innerText = isLoginMode ? "Login" : "Signup";
+            document.getElementById('authBtn').innerText = isLoginMode ? "Login" : "Signup";
+            document.getElementById('toggleBtn').innerText = isLoginMode ? "Need an account? Signup" : "Already have an account? Login";
         }
 
         async function handleAuth() {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPass').value;
             const btn = document.getElementById('authBtn');
-            if(!email || !password) return alert("All fields required.");
+            if(!email || !password) return alert("Please enter both email and password.");
 
-            btn.innerText = "AUTHENTICATING...";
+            btn.innerText = "Processing...";
             const endpoint = isLoginMode ? "/login" : "/signup";
             try {
                 const res = await fetch(API_BASE + endpoint, {
@@ -125,11 +126,11 @@
                     document.getElementById('authOverlay').style.display = 'none';
                     loadHistory();
                 } else {
-                    alert("Practitioner Registered. Please Initialize Session.");
+                    alert("Account created! Please login now.");
                     toggleAuthMode();
                 }
             } catch(e) { alert(e.message); }
-            finally { btn.innerText = isLoginMode ? "Initialize" : "Register"; }
+            finally { btn.innerText = isLoginMode ? "Login" : "Signup"; }
         }
 
         function logout() { localStorage.removeItem('heart_token'); location.reload(); }
@@ -177,7 +178,7 @@
             const btn = document.getElementById('analyzeBtn');
             if(!file) return alert("Select a file first.");
 
-            btn.innerText = "NEURAL PROCESSING...";
+            btn.innerText = "ANALYZING...";
             btn.disabled = true;
 
             const formData = new FormData();
@@ -198,10 +199,10 @@
                 document.getElementById('abnormalPercent').innerText = (data.average_probability*100).toFixed(1) + "%";
                 
                 renderChart(data.waveform);
-                loadHistory(); // Refresh history after new prediction
+                loadHistory(); 
             } catch(e) { alert("Analysis failed: " + e.message); }
             finally {
-                btn.innerText = "RUN NEURAL ANALYSIS";
+                btn.innerText = "RUN ANALYSIS";
                 btn.disabled = false;
             }
         }
@@ -235,7 +236,6 @@
             });
         }
 
-        // Initial Start
         if(localStorage.getItem('heart_token')) {
             document.getElementById('authOverlay').style.display = 'none';
             loadHistory();
