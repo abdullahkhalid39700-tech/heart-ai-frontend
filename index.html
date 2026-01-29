@@ -80,11 +80,11 @@
             <div id="resultCard" class="hidden animate-in fade-in duration-500 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="glass p-6 rounded-3xl border-l-4 border-emerald-500">
-                        <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-widest">Regularity Score</p>
+                        <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-widest">Normal Signal Confidence</p>
                         <h2 id="normalPercent" class="text-4xl font-black text-emerald-400 font-mono">0%</h2>
                     </div>
                     <div class="glass p-6 rounded-3xl border-l-4 border-red-500">
-                        <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-widest">Arrhythmia Risk</p>
+                        <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-widest">Arrhythmia Detection</p>
                         <h2 id="abnormalPercent" class="text-4xl font-black text-red-500 font-mono">0%</h2>
                     </div>
                 </div>
@@ -96,7 +96,7 @@
             <div id="emptyState" class="glass h-full min-h-[600px] rounded-[2.5rem] flex flex-col items-center justify-center text-center p-10">
                 <div class="w-16 h-16 border border-white/5 rounded-full flex items-center justify-center mb-6 animate-pulse text-red-600/50 text-xl">♥</div>
                 <p class="text-slate-500 font-mono text-xs uppercase tracking-[0.4em]">Clinical Engine Ready</p>
-                <p class="text-slate-700 text-[10px] mt-2 uppercase">Select a file from the library to begin analysis</p>
+                <p class="text-slate-700 text-[10px] mt-2 uppercase">Select a patient record to analyze neural core data</p>
             </div>
         </div>
     </main>
@@ -106,7 +106,7 @@
         let isLoginMode = true;
         let chart = null;
 
-        // AUTH HELPERS
+        // AUTH HEADERS
         const getHeaders = (isMultipart = false) => {
             const token = localStorage.getItem('heart_token');
             const headers = { 'Authorization': `Bearer ${token}` };
@@ -124,7 +124,7 @@
         async function handleAuth() {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPass').value;
-            if(!email || !password) return alert("Fill all fields");
+            if(!email || !password) return alert("All fields required");
             
             const endpoint = isLoginMode ? "/login" : "/signup";
             try {
@@ -139,11 +139,11 @@
                         localStorage.setItem('heart_token', data.token);
                         location.reload();
                     } else { 
-                        alert("Signup successful! Please login."); 
+                        alert("Account created. Please login."); 
                         toggleAuthMode(); 
                     }
-                } else { alert(data.detail || "Authentication failed"); }
-            } catch (e) { alert("Server is currently unavailable."); }
+                } else { alert(data.detail || "Auth Error"); }
+            } catch (e) { alert("Backend Offline"); }
         }
 
         function logout() { 
@@ -151,7 +151,7 @@
             location.reload(); 
         }
 
-        // FILE HANDLING
+        // UPLOAD LOGIC
         document.getElementById('fileInput').onchange = e => {
             document.getElementById('fileNameDisplay').innerText = e.target.files[0]?.name || "Attach ECG CSV";
         };
@@ -162,7 +162,7 @@
             const age = document.getElementById('pAge').value;
             const gender = document.getElementById('pGender').value;
 
-            if(!file || !name || !age) return alert("Complete patient data required");
+            if(!file || !name || !age) return alert("Patient info missing");
 
             const formData = new FormData();
             formData.append('file', file);
@@ -180,52 +180,43 @@
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('heart_token')}` },
                     body: formData
                 });
-
                 if(res.ok) {
-                    alert("Record stored in clinical vault.");
-                    document.getElementById('pName').value = "";
-                    document.getElementById('pAge').value = "";
+                    alert("Stored in Database");
                     loadFileLibrary();
-                } else {
-                    const err = await res.json();
-                    alert("Upload failed: " + (err.detail || "Check backend connection"));
                 }
-            } catch (e) { alert("Network error during upload."); }
-            finally { 
-                btn.innerText = "STORE RECORDS"; 
-                btn.disabled = false;
-            }
+            } catch (e) { alert("Upload error"); }
+            finally { btn.innerText = "STORE RECORDS"; btn.disabled = false; }
         }
 
+        // LIBRARY LOGIC
         async function loadFileLibrary() {
+            const container = document.getElementById('fileList');
             try {
-                const res = await fetch(`${API_BASE}/ecg-files`, {
-                    headers: getHeaders()
-                });
+                const res = await fetch(`${API_BASE}/ecg-files`, { headers: getHeaders() });
                 const files = await res.json();
-                const container = document.getElementById('fileList');
                 
-                if (files.length === 0) {
-                    container.innerHTML = '<p class="text-[10px] text-slate-600 text-center py-8 uppercase tracking-widest">No records found</p>';
+                if (!files.length) {
+                    container.innerHTML = `<p class="text-center py-10 text-slate-600 text-xs">NO RECORDS</p>`;
                     return;
                 }
 
                 container.innerHTML = files.map(f => `
-                    <div class="p-4 bg-slate-900/30 border border-white/5 rounded-2xl flex justify-between items-center group hover:border-red-500/30 transition-all">
-                        <div class="truncate mr-4">
-                            <p class="text-[11px] font-bold text-slate-200 truncate">${f.patient_name || 'Anonymous'}</p>
-                            <p class="text-[8px] text-slate-500 uppercase font-mono">${new Date(f.uploaded_at).toLocaleDateString()} | ${f.gender}</p>
+                    <div class="p-4 bg-slate-900/30 border border-white/5 rounded-2xl flex justify-between items-center hover:border-red-500/30 transition-all">
+                        <div class="truncate">
+                            <p class="text-[11px] font-bold text-slate-200">${f.patient_name}</p>
+                            <p class="text-[8px] text-slate-500 uppercase font-mono">${new Date(f.uploaded_at).toLocaleDateString()}</p>
                         </div>
-                        <button onclick="analyzeFile('${f.file_id}', event)" class="bg-red-600/10 text-red-500 text-[9px] px-4 py-2 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold tracking-widest uppercase">Analyze</button>
+                        <button onclick="analyzeFile('${f.file_id}', event)" class="bg-red-600/10 text-red-500 text-[9px] px-4 py-2 rounded-xl font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">Analyze</button>
                     </div>
                 `).join('');
-            } catch (e) { console.error("Library failed to load"); }
+            } catch (e) { container.innerHTML = "Fail"; }
         }
 
+        // THE FIX: ANALYZE LOGIC (SYNCHRONIZED WITH BACKEND)
         async function analyzeFile(fileId, event) {
             const btn = event.target;
             const originalText = btn.innerText;
-            btn.innerText = "LDR...";
+            btn.innerText = "CALC...";
             
             try {
                 const res = await fetch(`${API_BASE}/predict-from-file/${fileId}`, {
@@ -239,13 +230,16 @@
                 document.getElementById('emptyState').classList.add('hidden');
                 document.getElementById('resultCard').classList.remove('hidden');
                 
-                const prob = data.probability;
-                document.getElementById('abnormalPercent').innerText = (prob * 100).toFixed(1) + "%";
-                document.getElementById('normalPercent').innerText = ((1 - prob) * 100).toFixed(1) + "%";
+                // Use the exact keys from app.py
+                const normalVal = data.normal_percentage || 0;
+                const abnormalVal = data.abnormal_percentage || 0;
+
+                document.getElementById('normalPercent').innerText = normalVal.toFixed(1) + "%";
+                document.getElementById('abnormalPercent').innerText = abnormalVal.toFixed(1) + "%";
                 
                 renderChart(data.waveform);
             } catch (e) { 
-                alert("Analysis error: " + e.message); 
+                alert("Neural Core Error: " + e.message); 
             } finally { 
                 btn.innerText = originalText; 
             }
@@ -261,9 +255,9 @@
                     datasets: [{ 
                         data: points, 
                         borderColor: '#ef4444', 
-                        borderWidth: 2, 
+                        borderWidth: 1.5, 
                         pointRadius: 0, 
-                        tension: 0.3, 
+                        tension: 0.4, 
                         fill: true, 
                         backgroundColor: 'rgba(239, 68, 68, 0.05)' 
                     }]
@@ -274,16 +268,13 @@
                     plugins: { legend: { display: false } },
                     scales: { 
                         x: { display: false }, 
-                        y: { 
-                            grid: { color: 'rgba(255,255,255,0.03)' }, 
-                            ticks: { color: 'rgba(255,255,255,0.2)', font: { size: 9 } } 
-                        } 
+                        y: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { display: false } } 
                     }
                 }
             });
         }
 
-        // INITIALIZE
+        // STARTUP
         if(localStorage.getItem('heart_token')) {
             document.getElementById('authOverlay').classList.add('hidden');
             loadFileLibrary();
