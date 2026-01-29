@@ -14,6 +14,7 @@
         @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(239, 68, 68, 0.2); border-radius: 10px; }
+        input:focus, select:focus { border-color: rgba(239, 68, 68, 0.5) !important; }
     </style>
 </head>
 <body class="text-slate-200 min-h-screen">
@@ -26,8 +27,8 @@
                 <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest">Pulse Prognosis Access</p>
             </div>
             <div class="space-y-4">
-                <input type="email" id="authEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
-                <input type="password" id="authPass" placeholder="Password" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
+                <input type="email" id="authEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl outline-none transition-all">
+                <input type="password" id="authPass" placeholder="Password" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl outline-none transition-all">
                 <button onclick="handleAuth()" id="authBtn" class="w-full bg-red-600 py-4 rounded-2xl font-bold hover:bg-red-500 transition-all shadow-lg shadow-red-900/40 uppercase text-sm tracking-widest">Login</button>
                 <button onclick="toggleAuthMode()" id="toggleBtn" class="w-full text-xs text-slate-500 hover:text-red-400">Need an account? Signup</button>
             </div>
@@ -48,10 +49,10 @@
             <div class="glass p-8 rounded-[2.5rem]">
                 <h3 class="font-bold text-lg mb-6 text-red-500 uppercase tracking-tighter">01. Patient Registration</h3>
                 <div class="space-y-3">
-                    <input type="text" id="pName" placeholder="Patient Name" class="w-full bg-slate-900/50 border border-white/5 p-3 rounded-xl text-sm outline-none focus:border-red-500/50">
+                    <input type="text" id="pName" placeholder="Patient Name" class="w-full bg-slate-900/50 border border-white/5 p-3 rounded-xl text-sm outline-none">
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="number" id="pAge" placeholder="Age" class="w-full bg-slate-900/50 border border-white/5 p-3 rounded-xl text-sm outline-none focus:border-red-500/50">
-                        <select id="pGender" class="w-full bg-slate-900/50 border border-white/5 p-3 rounded-xl text-sm outline-none focus:border-red-500/50 text-slate-400">
+                        <input type="number" id="pAge" placeholder="Age" class="w-full bg-slate-900/50 border border-white/5 p-3 rounded-xl text-sm outline-none">
+                        <select id="pGender" class="w-full bg-slate-900/50 border border-white/5 p-3 rounded-xl text-sm outline-none text-slate-400">
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
@@ -68,16 +69,16 @@
             <div class="glass p-8 rounded-[2.5rem]">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="font-bold text-xs text-slate-500 uppercase tracking-widest">File Library</h3>
-                    <button onclick="loadFileLibrary()" class="text-[10px] text-red-500 font-mono">Refresh</button>
+                    <button onclick="loadFileLibrary()" class="text-[10px] text-red-500 font-mono hover:underline">Refresh</button>
                 </div>
-                <div id="fileList" class="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                <div id="fileList" class="space-y-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
                     </div>
             </div>
         </div>
 
         <div class="lg:col-span-8 space-y-6">
-            <div id="resultCard" class="hidden space-y-6">
-                <div class="grid grid-cols-2 gap-6">
+            <div id="resultCard" class="hidden animate-in fade-in duration-500 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="glass p-6 rounded-3xl border-l-4 border-emerald-500">
                         <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-widest">Regularity Score</p>
                         <h2 id="normalPercent" class="text-4xl font-black text-emerald-400 font-mono">0%</h2>
@@ -105,11 +106,19 @@
         let isLoginMode = true;
         let chart = null;
 
-        // AUTH
+        // AUTH HELPERS
+        const getHeaders = (isMultipart = false) => {
+            const token = localStorage.getItem('heart_token');
+            const headers = { 'Authorization': `Bearer ${token}` };
+            if (!isMultipart) headers['Content-Type'] = 'application/json';
+            return headers;
+        };
+
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
             document.getElementById('authTitle').innerText = isLoginMode ? "Login" : "Signup";
             document.getElementById('authBtn').innerText = isLoginMode ? "Login" : "Signup";
+            document.getElementById('toggleBtn').innerText = isLoginMode ? "Need an account? Signup" : "Have an account? Login";
         }
 
         async function handleAuth() {
@@ -118,29 +127,36 @@
             if(!email || !password) return alert("Fill all fields");
             
             const endpoint = isLoginMode ? "/login" : "/signup";
-            const res = await fetch(API_BASE + endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            if(res.ok) {
-                if(isLoginMode) {
-                    localStorage.setItem('heart_token', data.token);
-                    location.reload();
-                } else { alert("Signed up!"); toggleAuthMode(); }
-            } else { alert(data.detail); }
+            try {
+                const res = await fetch(API_BASE + endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    if(isLoginMode) {
+                        localStorage.setItem('heart_token', data.token);
+                        location.reload();
+                    } else { 
+                        alert("Signup successful! Please login."); 
+                        toggleAuthMode(); 
+                    }
+                } else { alert(data.detail || "Authentication failed"); }
+            } catch (e) { alert("Server is currently unavailable."); }
         }
 
-        function logout() { localStorage.removeItem('heart_token'); location.reload(); }
+        function logout() { 
+            localStorage.removeItem('heart_token'); 
+            location.reload(); 
+        }
 
-        // FILE UPLOAD (New Logic)
+        // FILE HANDLING
         document.getElementById('fileInput').onchange = e => {
             document.getElementById('fileNameDisplay').innerText = e.target.files[0]?.name || "Attach ECG CSV";
         };
 
         async function uploadECG() {
-            const token = localStorage.getItem('heart_token');
             const file = document.getElementById('fileInput').files[0];
             const name = document.getElementById('pName').value;
             const age = document.getElementById('pAge').value;
@@ -154,60 +170,85 @@
             formData.append('age', age);
             formData.append('gender', gender);
 
-            const res = await fetch(`${API_BASE}/upload-ecg`, {
-                method: 'POST',
-                headers: { 'Authorization': token },
-                body: formData
-            });
+            const btn = document.getElementById('uploadBtn');
+            btn.innerText = "UPLOADING...";
+            btn.disabled = true;
 
-            if(res.ok) {
-                alert("Clinical record stored.");
-                loadFileLibrary();
+            try {
+                const res = await fetch(`${API_BASE}/upload-ecg`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('heart_token')}` },
+                    body: formData
+                });
+
+                if(res.ok) {
+                    alert("Record stored in clinical vault.");
+                    document.getElementById('pName').value = "";
+                    document.getElementById('pAge').value = "";
+                    loadFileLibrary();
+                } else {
+                    const err = await res.json();
+                    alert("Upload failed: " + (err.detail || "Check backend connection"));
+                }
+            } catch (e) { alert("Network error during upload."); }
+            finally { 
+                btn.innerText = "STORE RECORDS"; 
+                btn.disabled = false;
             }
         }
 
-        // FILE LIBRARY (New Logic)
         async function loadFileLibrary() {
-            const token = localStorage.getItem('heart_token');
-            const res = await fetch(`${API_BASE}/ecg-files`, {
-                headers: { 'Authorization': token }
-            });
-            const files = await res.json();
-            const container = document.getElementById('fileList');
-            
-            container.innerHTML = files.map(f => `
-                <div class="p-3 bg-slate-900/30 border border-white/5 rounded-xl flex justify-between items-center group">
-                    <div class="truncate mr-2">
-                        <p class="text-[10px] font-bold text-slate-300 truncate">${f.filename}</p>
-                        <p class="text-[8px] text-slate-600 uppercase">Uploaded: ${new Date(f.uploaded_at).toLocaleDateString()}</p>
+            try {
+                const res = await fetch(`${API_BASE}/ecg-files`, {
+                    headers: getHeaders()
+                });
+                const files = await res.json();
+                const container = document.getElementById('fileList');
+                
+                if (files.length === 0) {
+                    container.innerHTML = '<p class="text-[10px] text-slate-600 text-center py-8 uppercase tracking-widest">No records found</p>';
+                    return;
+                }
+
+                container.innerHTML = files.map(f => `
+                    <div class="p-4 bg-slate-900/30 border border-white/5 rounded-2xl flex justify-between items-center group hover:border-red-500/30 transition-all">
+                        <div class="truncate mr-4">
+                            <p class="text-[11px] font-bold text-slate-200 truncate">${f.patient_name || 'Anonymous'}</p>
+                            <p class="text-[8px] text-slate-500 uppercase font-mono">${new Date(f.uploaded_at).toLocaleDateString()} | ${f.gender}</p>
+                        </div>
+                        <button onclick="analyzeFile('${f.file_id}', event)" class="bg-red-600/10 text-red-500 text-[9px] px-4 py-2 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold tracking-widest uppercase">Analyze</button>
                     </div>
-                    <button onclick="analyzeFile(${f.file_id})" class="bg-red-600/10 text-red-500 text-[8px] px-3 py-1.5 rounded-lg hover:bg-red-600 hover:text-white transition-all font-bold">ANALYZE</button>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (e) { console.error("Library failed to load"); }
         }
 
-        // PREDICTION FROM STORAGE (New Logic)
-        async function analyzeFile(fileId) {
-            const token = localStorage.getItem('heart_token');
+        async function analyzeFile(fileId, event) {
             const btn = event.target;
-            btn.innerText = "PROCESSING...";
+            const originalText = btn.innerText;
+            btn.innerText = "LDR...";
             
             try {
                 const res = await fetch(`${API_BASE}/predict-from-file/${fileId}`, {
                     method: 'POST',
-                    headers: { 'Authorization': token }
+                    headers: getHeaders()
                 });
                 const data = await res.json();
+
+                if (!res.ok) throw new Error(data.detail);
 
                 document.getElementById('emptyState').classList.add('hidden');
                 document.getElementById('resultCard').classList.remove('hidden');
                 
-                document.getElementById('abnormalPercent').innerText = (data.probability * 100).toFixed(1) + "%";
-                document.getElementById('normalPercent').innerText = ((1 - data.probability) * 100).toFixed(1) + "%";
+                const prob = data.probability;
+                document.getElementById('abnormalPercent').innerText = (prob * 100).toFixed(1) + "%";
+                document.getElementById('normalPercent').innerText = ((1 - prob) * 100).toFixed(1) + "%";
                 
                 renderChart(data.waveform);
-            } catch (e) { alert("Analysis Error"); }
-            finally { btn.innerText = "ANALYZE"; }
+            } catch (e) { 
+                alert("Analysis error: " + e.message); 
+            } finally { 
+                btn.innerText = originalText; 
+            }
         }
 
         function renderChart(points) {
@@ -217,14 +258,32 @@
                 type: 'line',
                 data: {
                     labels: points.map((_,i) => i),
-                    datasets: [{ data: points, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(239, 68, 68, 0.05)' }]
+                    datasets: [{ 
+                        data: points, 
+                        borderColor: '#ef4444', 
+                        borderWidth: 2, 
+                        pointRadius: 0, 
+                        tension: 0.3, 
+                        fill: true, 
+                        backgroundColor: 'rgba(239, 68, 68, 0.05)' 
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-                    scales: { x: { display: false }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.2)', font: { size: 10 } } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        x: { display: false }, 
+                        y: { 
+                            grid: { color: 'rgba(255,255,255,0.03)' }, 
+                            ticks: { color: 'rgba(255,255,255,0.2)', font: { size: 9 } } 
+                        } 
+                    }
                 }
             });
         }
 
+        // INITIALIZE
         if(localStorage.getItem('heart_token')) {
             document.getElementById('authOverlay').classList.add('hidden');
             loadFileLibrary();
