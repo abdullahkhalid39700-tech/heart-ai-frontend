@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pulse Prognosis | Neural Core</title>
+    <title>Pulse Prognosis | Clinical Core</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
@@ -18,241 +18,217 @@
 </head>
 <body class="text-slate-200 min-h-screen">
 
-<!-- AUTH OVERLAY -->
-<div id="authOverlay" class="fixed inset-0 z-[100] bg-slate-950 flex items-center justify-center p-6">
-    <div class="glass p-10 rounded-[3rem] w-full max-w-md border-red-500/20 shadow-2xl">
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 bg-red-600 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 heartbeat">♥</div>
-            <h2 id="authTitle" class="text-2xl font-black tracking-tighter uppercase">Login</h2>
-            <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest">Pulse Prognosis Access</p>
-        </div>
-        <div class="space-y-4">
-            <input type="email" id="authEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
-            <input type="password" id="authPass" placeholder="Password" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
-            <button onclick="handleAuth()" id="authBtn" class="w-full bg-red-600 py-4 rounded-2xl font-bold hover:bg-red-500 transition-all shadow-lg shadow-red-900/40 uppercase text-sm tracking-widest">Login</button>
-            <button onclick="toggleAuthMode()" id="toggleBtn" class="w-full text-xs text-slate-500 hover:text-red-400">Need an account? Signup</button>
-        </div>
-    </div>
-</div>
-
-<!-- NAV -->
-<nav class="p-6 glass border-b border-white/5 sticky top-0 z-50 flex justify-between items-center">
-    <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold">♥</div>
-        <h1 class="text-xl font-black tracking-tighter">PULSE<span class="text-red-500">PROGNOSIS</span></h1>
-    </div>
-    <button onclick="logout()" class="text-[10px] font-bold text-slate-500 hover:text-red-400 border border-white/10 px-4 py-2 rounded-xl transition-all">LOGOUT</button>
-</nav>
-
-<!-- MAIN CONTENT -->
-<main class="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
-
-    <!-- LEFT SIDEBAR -->
-    <div class="lg:col-span-4 space-y-6">
-        <!-- UPLOAD CARD -->
-        <div class="glass p-8 rounded-[2.5rem]">
-            <h3 class="font-bold text-lg mb-6 text-red-500 uppercase tracking-tighter">01. Input Signal</h3>
-
-            <!-- Patient Info -->
-            <div class="space-y-2 mb-4">
-                <input type="text" id="patientName" placeholder="Patient Name" class="w-full bg-slate-900 border border-white/10 p-3 rounded-xl focus:border-red-500 outline-none">
-                <input type="number" id="patientAge" placeholder="Age" class="w-full bg-slate-900 border border-white/10 p-3 rounded-xl focus:border-red-500 outline-none">
-                <input type="text" id="patientGender" placeholder="Gender" class="w-full bg-slate-900 border border-white/10 p-3 rounded-xl focus:border-red-500 outline-none">
+    <div id="authOverlay" class="fixed inset-0 z-[100] bg-slate-950 flex items-center justify-center p-6">
+        <div class="glass p-10 rounded-[3rem] w-full max-w-md border-red-500/20 shadow-2xl">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-red-600 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 heartbeat">♥</div>
+                <h2 id="authTitle" class="text-2xl font-black tracking-tighter uppercase">Login</h2>
+                <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest">Pulse Prognosis Access</p>
             </div>
-
-            <!-- File Upload -->
-            <label class="block border-2 border-dashed border-slate-800 hover:border-red-500/40 rounded-3xl p-10 text-center cursor-pointer transition-all bg-slate-900/40">
-                <input type="file" id="fileInput" class="hidden" accept=".csv">
-                <div class="text-slate-500">
-                    <p class="font-bold text-sm">SELECT ECG DATASET</p>
-                    <p class="text-[10px] mt-2 opacity-40 font-mono" id="fileNameDisplay">idle_state</p>
-                </div>
-            </label>
-
-            <button onclick="uploadECG()" id="uploadBtn" class="w-full mt-6 bg-slate-100 text-slate-950 py-4 rounded-2xl font-black hover:bg-red-500 hover:text-white transition-all">UPLOAD ECG</button>
-        </div>
-
-        <!-- HISTORY CARD -->
-        <div class="glass p-8 rounded-[2.5rem] bg-gradient-to-b from-slate-900/20 to-transparent">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-xs text-slate-500 uppercase tracking-widest">ECG Files</h3>
-                <button onclick="loadECGFiles()" class="text-[10px] text-red-500 hover:text-white transition-all uppercase font-mono">Refresh</button>
-            </div>
-            <div id="historyList" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                <p class="text-[10px] opacity-30 italic font-mono text-center py-4">Awaiting telemetry...</p>
+            <div class="space-y-4">
+                <input type="email" id="authEmail" placeholder="Email Address" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
+                <input type="password" id="authPass" placeholder="Password" class="w-full bg-slate-900 border border-white/10 p-4 rounded-2xl focus:border-red-500 outline-none transition-all">
+                <button onclick="handleAuth()" id="authBtn" class="w-full bg-red-600 py-4 rounded-2xl font-bold hover:bg-red-500 transition-all shadow-lg shadow-red-900/40 uppercase text-sm tracking-widest">Login</button>
+                <button onclick="toggleAuthMode()" id="toggleBtn" class="w-full text-xs text-slate-500 hover:text-red-400">Need an account? Signup</button>
             </div>
         </div>
     </div>
 
-    <!-- RIGHT CONTENT -->
-    <div class="lg:col-span-8 space-y-6">
+    <nav class="p-6 glass border-b border-white/5 sticky top-0 z-50 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center font-bold">♥</div>
+            <h1 class="text-xl font-black tracking-tighter uppercase">Pulse<span class="text-red-500">Prognosis</span></h1>
+        </div>
+        <button onclick="logout()" class="text-[10px] font-bold text-slate-500 hover:text-red-400 border border-white/10 px-4 py-2 rounded-xl transition-all">LOGOUT</button>
+    </nav>
 
-        <!-- RESULT CARD -->
-        <div id="resultCard" class="hidden space-y-6">
-            <div class="grid grid-cols-2 gap-6">
-                <div class="glass p-6 rounded-3xl">
-                    <p class="text-[10px] font-bold text-slate-500 mb-2 text-center uppercase tracking-widest">Regularity Score</p>
-                    <h2 id="normalPercent" class="text-4xl font-black text-emerald-400 font-mono text-center">0%</h2>
-                </div>
-                <div class="glass p-6 rounded-3xl text-center">
-                    <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-widest">Arrhythmia Risk</p>
-                    <h2 id="abnormalPercent" class="text-4xl font-black text-red-500 font-mono">0%</h2>
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <div class="lg:col-span-4 space-y-6">
+            <div class="glass p-8 rounded-[2.5rem]">
+                <h3 class="font-bold text-lg mb-6 text-red-500 uppercase tracking-tighter">01. Patient Registration</h3>
+                <div class="space-y-3">
+                    <input type="text" id="pName" placeholder="Patient Name" class="w-full bg-slate-900/50 border border-white/5 p-3 rounded-xl text-sm outline-none focus:border-red-500/50">
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="number" id="pAge" placeholder="Age" class="w-full bg-slate-900/50 border border-white/5 p-3 rounded-xl text-sm outline-none focus:border-red-500/50">
+                        <select id="pGender" class="w-full bg-slate-900/50 border border-white/5 p-3 rounded-xl text-sm outline-none focus:border-red-500/50 text-slate-400">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <label class="block border border-dashed border-slate-800 hover:border-red-500/40 rounded-xl p-4 text-center cursor-pointer bg-slate-900/20 transition-all">
+                        <input type="file" id="fileInput" class="hidden" accept=".csv">
+                        <p class="text-[10px] font-bold text-slate-500 uppercase" id="fileNameDisplay">Attach ECG CSV</p>
+                    </label>
+                    <button onclick="uploadECG()" id="uploadBtn" class="w-full bg-white text-slate-950 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all text-xs uppercase tracking-widest">Store Records</button>
                 </div>
             </div>
-            <div class="glass p-8 rounded-[2.5rem] h-80">
-                <canvas id="ecgChart"></canvas>
+
+            <div class="glass p-8 rounded-[2.5rem]">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-xs text-slate-500 uppercase tracking-widest">File Library</h3>
+                    <button onclick="loadFileLibrary()" class="text-[10px] text-red-500 font-mono">Refresh</button>
+                </div>
+                <div id="fileList" class="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                    </div>
             </div>
         </div>
 
-        <!-- EMPTY STATE -->
-        <div id="emptyState" class="glass h-full min-h-[500px] rounded-[2.5rem] flex flex-col items-center justify-center opacity-40 text-center p-10">
-            <div class="w-20 h-20 border border-white/10 rounded-full flex items-center justify-center mb-4 animate-pulse">♥</div>
-            <p class="font-mono text-xs uppercase tracking-[0.3em]">Waiting for biometric data stream...</p>
+        <div class="lg:col-span-8 space-y-6">
+            <div id="resultCard" class="hidden space-y-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="glass p-6 rounded-3xl border-l-4 border-emerald-500">
+                        <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-widest">Regularity Score</p>
+                        <h2 id="normalPercent" class="text-4xl font-black text-emerald-400 font-mono">0%</h2>
+                    </div>
+                    <div class="glass p-6 rounded-3xl border-l-4 border-red-500">
+                        <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-widest">Arrhythmia Risk</p>
+                        <h2 id="abnormalPercent" class="text-4xl font-black text-red-500 font-mono">0%</h2>
+                    </div>
+                </div>
+                <div class="glass p-8 rounded-[2.5rem] h-96 relative">
+                    <canvas id="ecgChart"></canvas>
+                </div>
+            </div>
+
+            <div id="emptyState" class="glass h-full min-h-[600px] rounded-[2.5rem] flex flex-col items-center justify-center text-center p-10">
+                <div class="w-16 h-16 border border-white/5 rounded-full flex items-center justify-center mb-6 animate-pulse text-red-600/50 text-xl">♥</div>
+                <p class="text-slate-500 font-mono text-xs uppercase tracking-[0.4em]">Clinical Engine Ready</p>
+                <p class="text-slate-700 text-[10px] mt-2 uppercase">Select a file from the library to begin analysis</p>
+            </div>
         </div>
-    </div>
-</main>
+    </main>
 
-<script>
-const API_BASE = "https://ecg-ai-backend1.onrender.com";
-let chart = null;
-let isLoginMode = true;
+    <script>
+        const API_BASE = "https://ecg-ai-backend1.onrender.com";
+        let isLoginMode = true;
+        let chart = null;
 
-// AUTH FUNCTIONS
-function toggleAuthMode() {
-    isLoginMode = !isLoginMode;
-    document.getElementById('authTitle').innerText = isLoginMode ? "Login" : "Signup";
-    document.getElementById('authBtn').innerText = isLoginMode ? "Login" : "Signup";
-    document.getElementById('toggleBtn').innerText = isLoginMode ? "Need an account? Signup" : "Already have an account? Login";
-}
-
-async function handleAuth() {
-    const email = document.getElementById('authEmail').value;
-    const password = document.getElementById('authPass').value;
-    const btn = document.getElementById('authBtn');
-    if(!email || !password) return alert("Enter email and password.");
-
-    btn.innerText = "Processing...";
-    const endpoint = isLoginMode ? "/login" : "/signup";
-    try {
-        const res = await fetch(API_BASE + endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || "Authentication Failed");
-        if(isLoginMode) {
-            localStorage.setItem('heart_token', data.token);
-            document.getElementById('authOverlay').style.display = 'none';
-            loadECGFiles();
-        } else {
-            alert("Account created! Login now.");
-            toggleAuthMode();
+        // AUTH
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authTitle').innerText = isLoginMode ? "Login" : "Signup";
+            document.getElementById('authBtn').innerText = isLoginMode ? "Login" : "Signup";
         }
-    } catch(e) { alert(e.message); }
-    finally { btn.innerText = isLoginMode ? "Login" : "Signup"; }
-}
 
-function logout() { localStorage.removeItem('heart_token'); location.reload(); }
-
-// FILE SELECTION
-document.getElementById('fileInput').onchange = function() {
-    document.getElementById('fileNameDisplay').innerText = this.files[0] ? this.files[0].name : "idle_state";
-}
-
-// UPLOAD ECG
-async function uploadECG() {
-    const file = document.getElementById('fileInput').files[0];
-    const patient_name = document.getElementById('patientName').value;
-    const age = document.getElementById('patientAge').value;
-    const gender = document.getElementById('patientGender').value;
-    const token = localStorage.getItem('heart_token');
-    const btn = document.getElementById('uploadBtn');
-
-    if(!file || !patient_name || !age || !gender) return alert("Fill all fields and select file.");
-
-    btn.innerText = "UPLOADING...";
-    btn.disabled = true;
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('patient_name', patient_name);
-    formData.append('age', age);
-    formData.append('gender', gender);
-
-    try {
-        const res = await fetch(`${API_BASE}/upload-ecg`, {
-            method: 'POST',
-            headers: { 'Authorization': token },
-            body: formData
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || "Upload failed");
-        alert("ECG Uploaded Successfully!");
-        loadECGFiles();
-    } catch(e) { alert(e.message); }
-    finally { btn.innerText = "UPLOAD ECG"; btn.disabled = false; }
-}
-
-// LOAD ECG FILES
-async function loadECGFiles() {
-    const token = localStorage.getItem('heart_token');
-    if(!token) return;
-    try {
-        const res = await fetch(`${API_BASE}/ecg-files`, { headers: { 'Authorization': token } });
-        const files = await res.json();
-        const list = document.getElementById('historyList');
-        if(!files.length) {
-            list.innerHTML = `<p class="text-[10px] opacity-20 text-center py-4">No records found</p>`;
-            return;
+        async function handleAuth() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPass').value;
+            if(!email || !password) return alert("Fill all fields");
+            
+            const endpoint = isLoginMode ? "/login" : "/signup";
+            const res = await fetch(API_BASE + endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if(res.ok) {
+                if(isLoginMode) {
+                    localStorage.setItem('heart_token', data.token);
+                    location.reload();
+                } else { alert("Signed up!"); toggleAuthMode(); }
+            } else { alert(data.detail); }
         }
-        list.innerHTML = files.map(f => `
-            <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5 flex justify-between items-center group hover:border-red-500/30 transition-all">
-                <div>
-                    <p class="text-[10px] font-bold text-red-500 font-mono">${f.filename}</p>
-                    <p class="text-[8px] opacity-40 font-mono truncate w-24">Patient ID: ${f.patient_id}</p>
+
+        function logout() { localStorage.removeItem('heart_token'); location.reload(); }
+
+        // FILE UPLOAD (New Logic)
+        document.getElementById('fileInput').onchange = e => {
+            document.getElementById('fileNameDisplay').innerText = e.target.files[0]?.name || "Attach ECG CSV";
+        };
+
+        async function uploadECG() {
+            const token = localStorage.getItem('heart_token');
+            const file = document.getElementById('fileInput').files[0];
+            const name = document.getElementById('pName').value;
+            const age = document.getElementById('pAge').value;
+            const gender = document.getElementById('pGender').value;
+
+            if(!file || !name || !age) return alert("Complete patient data required");
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('patient_name', name);
+            formData.append('age', age);
+            formData.append('gender', gender);
+
+            const res = await fetch(`${API_BASE}/upload-ecg`, {
+                method: 'POST',
+                headers: { 'Authorization': token },
+                body: formData
+            });
+
+            if(res.ok) {
+                alert("Clinical record stored.");
+                loadFileLibrary();
+            }
+        }
+
+        // FILE LIBRARY (New Logic)
+        async function loadFileLibrary() {
+            const token = localStorage.getItem('heart_token');
+            const res = await fetch(`${API_BASE}/ecg-files`, {
+                headers: { 'Authorization': token }
+            });
+            const files = await res.json();
+            const container = document.getElementById('fileList');
+            
+            container.innerHTML = files.map(f => `
+                <div class="p-3 bg-slate-900/30 border border-white/5 rounded-xl flex justify-between items-center group">
+                    <div class="truncate mr-2">
+                        <p class="text-[10px] font-bold text-slate-300 truncate">${f.filename}</p>
+                        <p class="text-[8px] text-slate-600 uppercase">Uploaded: ${new Date(f.uploaded_at).toLocaleDateString()}</p>
+                    </div>
+                    <button onclick="analyzeFile(${f.file_id})" class="bg-red-600/10 text-red-500 text-[8px] px-3 py-1.5 rounded-lg hover:bg-red-600 hover:text-white transition-all font-bold">ANALYZE</button>
                 </div>
-                <div class="text-right">
-                    <button onclick="runPrediction(${f.file_id})" class="text-[10px] text-red-400 hover:text-red-600 font-mono">Analyze</button>
-                    <p class="text-[7px] opacity-30 italic">${new Date(f.uploaded_at).toLocaleDateString()}</p>
-                </div>
-            </div>
-        `).join('');
-    } catch(e) { console.error(e); }
-}
+            `).join('');
+        }
 
-// RUN PREDICTION
-async function runPrediction(fileId) {
-    const token = localStorage.getItem('heart_token');
-    try {
-        const res = await fetch(`${API_BASE}/predict-from-file/${fileId}`, { method:'POST', headers:{'Authorization':token} });
-        const data = await res.json();
-        if(data.error) throw new Error(data.error);
+        // PREDICTION FROM STORAGE (New Logic)
+        async function analyzeFile(fileId) {
+            const token = localStorage.getItem('heart_token');
+            const btn = event.target;
+            btn.innerText = "PROCESSING...";
+            
+            try {
+                const res = await fetch(`${API_BASE}/predict-from-file/${fileId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': token }
+                });
+                const data = await res.json();
 
-        document.getElementById('emptyState').classList.add('hidden');
-        document.getElementById('resultCard').classList.remove('hidden');
-        document.getElementById('normalPercent').innerText = ((1 - data.probability)*100).toFixed(1)+"%";
-        document.getElementById('abnormalPercent').innerText = (data.probability*100).toFixed(1)+"%";
-        renderChart(data.waveform);
-    } catch(e) { alert("Prediction failed: "+e.message); }
-}
+                document.getElementById('emptyState').classList.add('hidden');
+                document.getElementById('resultCard').classList.remove('hidden');
+                
+                document.getElementById('abnormalPercent').innerText = (data.probability * 100).toFixed(1) + "%";
+                document.getElementById('normalPercent').innerText = ((1 - data.probability) * 100).toFixed(1) + "%";
+                
+                renderChart(data.waveform);
+            } catch (e) { alert("Analysis Error"); }
+            finally { btn.innerText = "ANALYZE"; }
+        }
 
-// RENDER CHART
-function renderChart(points) {
-    const ctx = document.getElementById('ecgChart').getContext('2d');
-    if(chart) chart.destroy();
-    chart = new Chart(ctx, {
-        type: 'line',
-        data: { labels: points.map((_,i)=>i), datasets:[{data:points,borderColor:'#ef4444',borderWidth:2,pointRadius:0,tension:0.4,fill:true,backgroundColor:'rgba(239,68,68,0.05)'}] },
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(255,255,255,0.2)',font:{size:10}}}} }
-    });
-}
+        function renderChart(points) {
+            const ctx = document.getElementById('ecgChart').getContext('2d');
+            if(chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: points.map((_,i) => i),
+                    datasets: [{ data: points, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(239, 68, 68, 0.05)' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.2)', font: { size: 10 } } } }
+                }
+            });
+        }
 
-// INITIALIZE
-if(localStorage.getItem('heart_token')) {
-    document.getElementById('authOverlay').style.display = 'none';
-    loadECGFiles();
-}
-</script>
+        if(localStorage.getItem('heart_token')) {
+            document.getElementById('authOverlay').classList.add('hidden');
+            loadFileLibrary();
+        }
+    </script>
 </body>
 </html>
